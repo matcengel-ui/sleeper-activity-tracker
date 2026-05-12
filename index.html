@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sleeper Activity Tracker</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .activity-card {
+      background: white;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Sleeper Activity Tracker</h1>
+
+<input id="username" placeholder="Enter Sleeper Username" />
+<button onclick="loadActivity()">Load Activity</button>
+
+<div id="results"></div>
+
+<script>
+
+async function loadActivity() {
+
+  const username = document.getElementById("username").value;
+
+  const userResponse = await fetch(
+    `https://api.sleeper.app/v1/user/${username}`
+  );
+
+  const user = await userResponse.json();
+
+  const userId = user.user_id;
+
+  const leaguesResponse = await fetch(
+    `https://api.sleeper.app/v1/user/${userId}/leagues/nfl/2026`
+  );
+
+  const leagues = await leaguesResponse.json();
+
+  let allActivity = [];
+
+  for (const league of leagues) {
+
+    const transactionsResponse = await fetch(
+      `https://api.sleeper.app/v1/league/${league.league_id}/transactions/1`
+    );
+
+    const transactions = await transactionsResponse.json();
+
+    transactions.forEach(transaction => {
+
+      if (
+        transaction.creator === userId
+      ) {
+
+        allActivity.push({
+          league: league.name,
+          type: transaction.type,
+          status: transaction.status,
+          transaction_id: transaction.transaction_id
+        });
+
+      }
+
+    });
+
+  }
+
+  displayResults(allActivity);
+
+}
+
+function displayResults(activity) {
+
+  const resultsDiv = document.getElementById("results");
+
+  resultsDiv.innerHTML = "";
+
+  activity.forEach(item => {
+
+    resultsDiv.innerHTML += `
+      <div class="activity-card">
+        <h3>${item.league}</h3>
+        <p>Type: ${item.type}</p>
+        <p>Status: ${item.status}</p>
+        <p>ID: ${item.transaction_id}</p>
+      </div>
+    `;
+
+  });
+
+}
+
+</script>
+
+</body>
+</html>
